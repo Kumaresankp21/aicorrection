@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ role|capfirst }} Login</title>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 50px; }
+        input { margin: 10px; padding: 8px; width: 200px; }
+        .btn { padding: 10px 20px; background: #007bff; color: white; border: none; }
+        .btn:hover { background: #0056b3; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>{{ role|capfirst }} Login</h1>
+    {% if messages %}
+        {% for message in messages %}
+            <p class="error">{{ message }}</p>
+        {% endfor %}
+    {% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <input type="text" name="username" placeholder="Username" required><br>
+        <input type="password" name="password" placeholder="Password" required><br>
+        <button type="submit" class="btn">Login</button>
+    </form>
+</body>
+</html>

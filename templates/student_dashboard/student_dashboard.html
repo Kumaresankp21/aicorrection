@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Student Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 30px; background-color: #f4f4f4; }
+        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        h2 { text-align: center; }
+        .upload-section, .list-section { margin-bottom: 30px; }
+        input[type="text"], select, input[type="file"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
+        th { background-color: #007bff; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Student Dashboard</h2>
+
+        <!-- Upload Section -->
+        <div class="upload-section">
+            <h3>Upload Answer Sheet</h3>
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                {{ form.as_p }}
+                <button type="submit" class="btn">Upload</button>
+            </form>
+        </div>
+
+        <!-- Uploaded Answer Sheets -->
+        <div class="list-section">
+            <h3>Your Uploaded Answer Sheets</h3>
+            {% if uploaded_sheets %}
+                <table>
+                    <tr>
+                        <th>File Name</th>
+                        <th>Year</th>
+                        <th>Exam Type</th>
+                        <th>Staff Name</th>
+                        <th>Subject</th>
+                        <th>Uploaded At</th>
+                        <th>Status</th>
+                        <th>Grade</th>
+                    </tr>
+                    {% for sheet in uploaded_sheets %}
+                        <tr>
+                            <td><a href="{{ sheet.answer_file.url }}">{{ sheet.answer_file.name|slice:"15:" }}</a></td>
+                            <td>{{ sheet.get_year_display }}</td>
+                            <td>{{ sheet.exam_type }}</td>
+                            <td>{{ sheet.staff_name }}</td>
+                            <td>{{ sheet.subject }}</td>
+                            <td>{{ sheet.uploaded_at|date:"Y-m-d H:i" }}</td>
+                            <td>{{ sheet.is_graded|yesno:"Graded,Not Graded" }}</td>
+                            <td>{{ sheet.grade|default:"-" }}</td>
+                        </tr>
+                    {% endfor %}
+                </table>
+            {% else %}
+                <p>No answer sheets uploaded yet.</p>
+            {% endif %}
+        </div>
+    </div>
+</body>
+</html>

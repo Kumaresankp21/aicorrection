@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Register</title>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 50px; background: #f4f4f4; }
+        .form-container { background: white; padding: 30px; border-radius: 10px; display: inline-block; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+        input, select { padding: 10px; margin: 10px; width: 250px; }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; }
+        .btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <h2>Create an Account</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit" class="btn">Register</button>
+        </form>
+    </div>
+</body>
+</html>

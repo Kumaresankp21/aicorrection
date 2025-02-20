@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Teacher Dashboard{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3">
+        <div class="list-group">
+            <a href="{% url 'teacher_dashboard' %}" class="list-group-item list-group-item-action active">
+                Dashboard
+            </a>
+            <a href="{% url 'create_exam' %}" class="list-group-item list-group-item-action">
+                Create Exam
+            </a>
+            <a href="{% url 'student_info' %}" class="list-group-item list-group-item-action">
+                Student Info
+            </a>
+            <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">
+                Logout
+            </a>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="col-md-9">
+        <h2>Welcome, {{ user.username }}</h2>
+        <p>Select an option from the sidebar to get started.</p>
+    </div>
+</div>
+{% endblock %}
