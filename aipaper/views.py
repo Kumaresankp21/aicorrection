@@ -1,11 +1,17 @@
-from django.shortcuts import render,redirect
+from django.shortcuts import render,redirect,get_object_or_404
 from django.contrib.auth import authenticate, login,logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse
-from .forms import UserRegistrationForm,AnswerSheetUploadForm,ExamCreationForm
-from app.models import AnswerSheet
-
+from .forms import UserRegistrationForm,StudentExamForm,ExamForm
+from app.models import StudentExam,Exam
+from .ocr import generate_ocr
+from .extract_question_answerkey import question_answer_content
+from .preprocess_ocr import preprocess_ocr_question_wise
+from .evalution import evaluate_exam_with_ocr_to_json
+from .report import generate_report
+from.get_score import extract_score_from_report
+import json 
 
 def home(request):
     return render(request, 'home.html')
@@ -32,14 +38,15 @@ def user_login(request):
 
     return render(request, 'login.html', {'role': role})
 
-
 @login_required
 def student_dashboard(request):
-    return render(request,"student/student_dashboard.html")
-
+    exams = StudentExam.objects.filter(student=request.user)
+    return render(request, 'student_dashboard/student_dashboard.html', {'exams': exams})
 @login_required
+# Teacher Dashboard showing created exams
 def teacher_dashboard(request):
-    return render(request,"teacher/teacher_dashboard.html")
+    exams = Exam.objects.all()  # List all created exams
+    return render(request, 'teacher/teacher_dashboard.html', {'exams': exams})
 
 def register(request):
     if request.method == 'POST':
@@ -61,49 +68,116 @@ def register(request):
 
     return render(request, 'register/register.html', {'form': form})
 
-
 @login_required
-def student_dashboard(request):
-    student = request.user
-
+def student_exam_fill(request):
     if request.method == 'POST':
-        form = AnswerSheetUploadForm(request.POST, request.FILES)
+        form = StudentExamForm(request.POST)
         if form.is_valid():
-            answer_sheet = form.save(commit=False)
-            answer_sheet.student = student
-            answer_sheet.save()
-            return redirect('student_dashboard')
+            exam = form.save(commit=False)
+            exam.student = request.user  # Link to logged-in student
+            exam.save()
+            return redirect('student_dashboard')  # Redirect after success
     else:
-        form = AnswerSheetUploadForm()
-
-    uploaded_sheets = AnswerSheet.objects.filter(student=student)
-
-    return render(request, 'student_dashboard/student_dashboard.html', {
-        'form': form,
-        'uploaded_sheets': uploaded_sheets
-    })
+        form = StudentExamForm()
+    
+    return render(request, 'student_dashboard/exam_fill.html', {'form': form})
 
 
-def create_exam(request):
-    if request.method == 'POST':
-        form = ExamCreationForm(request.POST, request.FILES)
-        if form.is_valid():
-            # Handle form data and save files here
-            exam_type = form.cleaned_data['exam_type']
-            year = form.cleaned_data['year']
-            subject = form.cleaned_data['subject']
-            staff_name = form.cleaned_data['staff_name']
-            question_paper = form.cleaned_data['question_paper']
-            answer_key = form.cleaned_data['answer_key']
 
-            # TODO: Save the files and exam details to the database
-
-            messages.success(request, "Exam created and files uploaded successfully!")
-            return redirect('teacher_dashboard')  # Redirect to dashboard after success
-    else:
-        form = ExamCreationForm()
-
-    return render(request, 'teacher/create_exam.html', {'form': form})
 
 def student_info(request):
     return HttpResponse("Working on it")
+
+def create_exam(request):
+    if request.method == 'POST':
+        form = ExamForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('teacher_dashboard')
+    else:
+        form = ExamForm()
+    return render(request, 'teacher/create_exam.html', {'form': form})
+
+def view_exam_submissions(request, exam_id):
+    exam = get_object_or_404(Exam, pk=exam_id)
+    submissions = StudentExam.objects.filter(
+        exam_type=exam.exam_type,
+        year=exam.year,
+    )
+
+    if request.method == 'POST':
+        submission_id = request.POST.get('submission_id')
+        action = request.POST.get('action')
+        submission = get_object_or_404(StudentExam, pk=submission_id)
+
+        # 🔥 Handle File Upload
+        if action == 'upload':
+            if 'ocr_answer_sheet' in request.FILES:
+                submission.ocr_answer_sheet = request.FILES['ocr_answer_sheet']
+                submission.save()
+                messages.success(request, f"OCR answer sheet uploaded for {submission.student.username}.")
+            else:
+                messages.error(request, "No file uploaded.")
+            return redirect('view_exam_submissions', exam_id=exam_id)
+
+        # 🔥 Handle Evaluation
+        elif action == 'evaluate':
+            if not submission.ocr_answer_sheet:
+                messages.error(request, "Upload OCR answer sheet before evaluating.")
+                return redirect('view_exam_submissions', exam_id=exam_id)
+
+            try:
+                # Step 1: Run OCR on uploaded file
+                ocr_text = generate_ocr(submission.ocr_answer_sheet.path)
+
+                # Step 2: Extract question paper content
+                question_paper_text = question_answer_content(exam.question_paper.path)
+
+                # Step 3: Preprocess OCR text (match answers to questions)
+                preprocessed_content = preprocess_ocr_question_wise(ocr_text, question_paper_text)
+
+                # Step 4: Load the answer key
+                answer_key_content = question_answer_content(exam.answer_key.path)
+
+                # Step 5: Evaluate answers
+                evaluation_result = evaluate_exam_with_ocr_to_json(preprocessed_content, answer_key_content)
+
+                # Step 6: Generate report and calculate scores
+                report = generate_report(evaluation_result)
+
+                # Step 7: Save results
+                submission.is_evaluated = True
+                submission.evaluation_report = report  # Assuming you have this field
+                submission.total_score = extract_score_from_report(report)  # Function to parse score
+                submission.save()
+
+                messages.success(request, f"Evaluation completed for {submission.student.username}.")
+
+            except Exception as e:
+                messages.error(request, f"Error during evaluation: {e}")
+
+            return redirect('view_exam_submissions', exam_id=exam_id)
+
+    context = {
+        'exam': exam,
+        'submissions': submissions,
+    }
+    return render(request, 'teacher/view_exam_submissions.html', context)
+
+
+def view_result(request, submission_id):
+    submission = get_object_or_404(StudentExam, id=submission_id)
+
+    # Parse the evaluation report JSON
+    evaluation_report = []
+    if submission.evaluation_report:
+        try:
+            evaluation_report = json.loads(submission.evaluation_report)
+        except json.JSONDecodeError:
+            evaluation_report = []
+
+    context = {
+        'submission': submission,
+        'evaluation_report': evaluation_report
+    }
+    return render(request, 'teacher/view_results.html', context)

@@ -1,0 +1,13 @@
+<!-- student_exam_fill.html -->
+{% extends 'base.html' %}
+{% block content %}
+<h2>Fill Exam Details</h2>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Submit</button>
+</form>
+
+<a href="{% url 'student_dashboard' %}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+{% endblock %}

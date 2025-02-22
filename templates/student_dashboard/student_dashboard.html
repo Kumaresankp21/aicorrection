@@ -1,67 +1,50 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Student Dashboard</title>
-    <style>
-        body { font-family: Arial, sans-serif; padding: 30px; background-color: #f4f4f4; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h2 { text-align: center; }
-        .upload-section, .list-section { margin-bottom: 30px; }
-        input[type="text"], select, input[type="file"] { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; }
-        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; cursor: pointer; }
-        .btn:hover { background: #0056b3; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { padding: 10px; border: 1px solid #ddd; text-align: center; }
-        th { background-color: #007bff; color: white; }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h2>Student Dashboard</h2>
+{% extends 'base.html' %}
+{% block content %}
+<h2>Welcome, {{ request.user.username }}</h2>
 
-        <!-- Upload Section -->
-        <div class="upload-section">
-            <h3>Upload Answer Sheet</h3>
-            <form method="post" enctype="multipart/form-data">
-                {% csrf_token %}
-                {{ form.as_p }}
-                <button type="submit" class="btn">Upload</button>
-            </form>
-        </div>
+<a href="{% url 'student_exam_fill' %}" class="btn btn-success mb-3">+ Fill Exam Details</a>
 
-        <!-- Uploaded Answer Sheets -->
-        <div class="list-section">
-            <h3>Your Uploaded Answer Sheets</h3>
-            {% if uploaded_sheets %}
-                <table>
-                    <tr>
-                        <th>File Name</th>
-                        <th>Year</th>
-                        <th>Exam Type</th>
-                        <th>Staff Name</th>
-                        <th>Subject</th>
-                        <th>Uploaded At</th>
-                        <th>Status</th>
-                        <th>Grade</th>
-                    </tr>
-                    {% for sheet in uploaded_sheets %}
-                        <tr>
-                            <td><a href="{{ sheet.answer_file.url }}">{{ sheet.answer_file.name|slice:"15:" }}</a></td>
-                            <td>{{ sheet.get_year_display }}</td>
-                            <td>{{ sheet.exam_type }}</td>
-                            <td>{{ sheet.staff_name }}</td>
-                            <td>{{ sheet.subject }}</td>
-                            <td>{{ sheet.uploaded_at|date:"Y-m-d H:i" }}</td>
-                            <td>{{ sheet.is_graded|yesno:"Graded,Not Graded" }}</td>
-                            <td>{{ sheet.grade|default:"-" }}</td>
-                        </tr>
-                    {% endfor %}
-                </table>
-            {% else %}
-                <p>No answer sheets uploaded yet.</p>
-            {% endif %}
-        </div>
-    </div>
-</body>
-</html>
+<h3>Your Submitted Exams:</h3>
+{% if exams %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Subject</th>
+                <th>Exam Type</th>
+                <th>Year</th>
+                <th>Staff Name</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for exam in exams %}
+                <tr>
+                    <td>{{ exam.subject }}</td>
+                    <td>{{ exam.get_exam_type_display }}</td>
+                    <td>{{ exam.get_year_display }}</td>
+                    <td>{{ exam.staff_name }}</td>
+                    <td>
+                        {% if exam.is_graded %}
+                            <span class="badge bg-success">Graded</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Pending</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if exam.is_graded %}
+                            <a href="{% url 'view_results' exam.id %}" class="btn btn-primary btn-sm">View Results</a>
+                        {% else %}
+                            <button class="btn btn-secondary btn-sm" disabled>Awaiting Grading</button>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>No exams submitted yet.</p>
+{% endif %}
+
+<a href="{% url 'logout' %}" class="btn btn-danger mt-3">Logout</a>
+{% endblock %}

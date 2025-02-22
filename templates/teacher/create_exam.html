@@ -2,19 +2,48 @@
 {% load static %}
 
 {% block content %}
-<h2>Create New Exam</h2>
-<form method="post" enctype="multipart/form-data">
-    {% csrf_token %}
-    {{ form.as_p }}
+<div class="container mt-4">
+    <h2>📝 Create New Exam</h2>
+    <hr>
+    <form method="POST" enctype="multipart/form-data" action="{% url 'create_exam' %}">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="exam_type">Exam Type</label>
+            <select name="exam_type" class="form-control" required>
+                <option value="">Select Exam Type</option>
+                <option value="CAT 1">CAT 1</option>
+                <option value="CAT 2">CAT 2</option>
+            </select>
+        </div>
 
-    <button type="submit" class="btn btn-primary">Create Exam</button>
-</form>
+        <div class="form-group mt-3">
+            <label for="year">Year</label>
+            <select name="year" class="form-control" required>
+                <option value="">Select Year</option>
+                <option value="1">1st Year</option>
+                <option value="2">2nd Year</option>
+                <option value="3">3rd Year</option>
+                <option value="4">4th Year</option>
+            </select>
+        </div>
 
-{% if messages %}
-    <ul>
-        {% for message in messages %}
-            <li>{{ message }}</li>
-        {% endfor %}
-    </ul>
-{% endif %}
+        <div class="form-group mt-3">
+            <label for="subject">Subject</label>
+            <input type="text" name="subject" class="form-control" placeholder="Enter Subject" required>
+        </div>
+
+        <div class="form-group mt-3">
+            <label for="question_paper">Upload Question Paper 📄</label>
+            <input type="file" name="question_paper" class="form-control" required>
+        </div>
+
+        <div class="form-group mt-3">
+            <label for="answer_key">Upload Answer Key 📑</label>
+            <input type="file" name="answer_key" class="form-control" required>
+        </div>
+
+        <button type="submit" class="btn btn-success mt-4">Create Exam</button>
+        <a href="{% url 'teacher_dashboard' %}" class="btn btn-secondary mt-4">Cancel</a>
+    </form>
+</div>
 {% endblock %}

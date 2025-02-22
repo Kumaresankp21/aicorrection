@@ -1,32 +1,56 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Teacher Dashboard{% endblock %}
-
 {% block content %}
-<div class="row">
-    <!-- Sidebar -->
-    <div class="col-md-3">
-        <div class="list-group">
-            <a href="{% url 'teacher_dashboard' %}" class="list-group-item list-group-item-action active">
-                Dashboard
-            </a>
-            <a href="{% url 'create_exam' %}" class="list-group-item list-group-item-action">
-                Create Exam
-            </a>
-            <a href="{% url 'student_info' %}" class="list-group-item list-group-item-action">
-                Student Info
-            </a>
-            <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">
-                Logout
-            </a>
+<div class="container mt-4">
+    <div class="row">
+        <!-- Sidebar -->
+        <div class="col-md-3">
+            <div class="list-group">
+                <a href="{% url 'teacher_dashboard' %}" class="list-group-item list-group-item-action active">🏠 Dashboard</a>
+                <a href="{% url 'create_exam' %}" class="list-group-item list-group-item-action">📝 Create Exam</a>
+                <a href="{% url 'students_info' %}" class="list-group-item list-group-item-action">👨‍🎓 Student Info</a>
+                <a href="{% url 'logout' %}" class="list-group-item list-group-item-action text-danger">🚪 Logout</a>
+            </div>
         </div>
-    </div>
 
-    <!-- Main Content -->
-    <div class="col-md-9">
-        <h2>Welcome, {{ user.username }}</h2>
-        <p>Select an option from the sidebar to get started.</p>
+        <!-- Main Content -->
+        <div class="col-md-9">
+            <h2>Welcome, {{ user.username }} 👋</h2>
+            <hr>
+
+            <!-- List of Created Exams -->
+            <h4>📋 Created Exams</h4>
+
+            {% if exams %}
+                <table class="table table-bordered mt-3">
+                    <thead>
+                        <tr>
+                            <th>Exam Type</th>
+                            <th>Year</th>
+                            <th>Subject</th>
+                            <th>Created On</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for exam in exams %}
+                        <tr>
+                            <td>{{ exam.exam_type }}</td>
+                            <td>{{ exam.year }}</td>
+                            <td>{{ exam.subject }}</td>
+                            <td>{{ exam.created_at|date:"M d, Y" }}</td>
+                            <td>
+                                <a href="{% url 'view_exam_submissions' exam.id %}" class="btn btn-info btn-sm">📂 View Submissions</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="mt-3">No exams created yet. Click on <strong>"Create Exam"</strong> to add one! 📚</p>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

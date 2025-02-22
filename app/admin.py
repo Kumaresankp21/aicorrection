@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import AnswerSheet,Profile
+from .models import StudentExam,Profile
 
 
-admin.site.register(AnswerSheet)
+admin.site.register(StudentExam)

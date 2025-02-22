@@ -1,0 +1,97 @@
+<!-- templates/student_info.html -->
+
+{% extends 'base.html' %}
+{% load static %}
+{% block content %}
+
+<h2>Submissions for {{ exam.subject }} - {{ exam.exam_type }} ({{ exam.get_year_display }})</h2>
+
+<!-- Display Messages -->
+{% if messages %}
+  {% for message in messages %}
+    <div style="color: green;">{{ message }}</div>
+  {% endfor %}
+{% endif %}
+
+<!-- Submissions Table -->
+<table border="1" cellpadding="10">
+    <thead>
+        <tr>
+            <th>Student Name</th>
+            <th>Year</th>
+            <th>Exam Type</th>
+            <th>Submitted At</th>
+            <th>OCR Answer Sheet</th>
+            <th>Status</th>
+            <th>Upload & Evaluate</th>
+            <th>View Result</th> <!-- New Column -->
+        </tr>
+    </thead>
+    <tbody>
+        {% for submission in submissions %}
+            <tr>
+                <td>{{ submission.student.username }}</td>
+                <td>{{ submission.get_year_display }}</td>
+                <td>{{ submission.exam_type }}</td>
+                <td>{{ submission.submitted_at }}</td>
+
+                <!-- OCR Answer Sheet Column -->
+                <td>
+                    {% if submission.ocr_answer_sheet %}
+                        <a href="{{ submission.ocr_answer_sheet.url }}" target="_blank">View File</a>
+                    {% else %}
+                        Not Uploaded
+                    {% endif %}
+                </td>
+
+                <!-- Evaluation Status -->
+                <td>
+                    {% if submission.is_evaluated %}
+                        ✅ Evaluated (Score: {{ submission.total_score }})
+                    {% else %}
+                        ❌ Not Evaluated
+                    {% endif %}
+                </td>
+
+                <!-- Upload & Evaluate Actions -->
+                <td>
+                    <form method="POST" enctype="multipart/form-data" style="display: flex; gap: 5px;">
+                        {% csrf_token %}
+                        <input type="hidden" name="submission_id" value="{{ submission.id }}">
+
+                        <!-- Upload Field -->
+                        {% if not submission.ocr_answer_sheet %}
+                            <input type="file" name="ocr_answer_sheet" style="width: 150px;" required>
+                            <button type="submit" name="action" value="upload">Upload</button>
+                        {% else %}
+                            <span>📂 Uploaded</span>
+                        {% endif %}
+
+                        <!-- Evaluate Button -->
+                        {% if submission.ocr_answer_sheet and not submission.is_evaluated %}
+                            <button type="submit" name="action" value="evaluate">Evaluate</button>
+                        {% endif %}
+                    </form>
+                </td>
+
+                <!-- View Result Column -->
+                <td>
+                    {% if submission.is_evaluated %}
+                        <a href="{% url 'view_result' submission.id %}" target="_blank">View Result</a>
+                    {% else %}
+                        <span>Pending</span>
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr>
+                <td colspan="8">No submissions found for this exam.</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<br>
+<a href="{% url 'teacher_dashboard' %}">⬅️ Back to Dashboard</a>
+
+{% endblock %}

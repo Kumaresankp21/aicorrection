@@ -1,0 +1,33 @@
+<!-- templates/view_results.html -->
+
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h2>Result for {{ submission.student.username }}</h2>
+
+<p><strong>Subject:</strong> {{ submission.subject }}</p>
+<p><strong>Exam Type:</strong> {{ submission.exam_type }}</p>
+<p><strong>Submitted At:</strong> {{ submission.submitted_at }}</p>
+<p><strong>Total Score:</strong> {{ submission.total_score|default:"N/A" }}</p>
+
+<h3>Evaluation Report:</h3>
+
+{% if evaluation_report %}
+  {% for item in evaluation_report %}
+    <div class="question-block">
+      <h4>Question {{ forloop.counter }}: {{ item.question }}</h4>
+      <p><strong>Student Answer:</strong> {{ item.student_answer }}</p>
+      <p><strong>Correct Answer:</strong> {{ item.correct_answer }}</p>
+      <p><strong>Marks Awarded:</strong> {{ item.marks_awarded }} / {{ item.max_marks }}</p>
+      <p><strong>Reason:</strong> {{ item.reason }}</p>
+    </div>
+    <hr>
+  {% endfor %}
+{% else %}
+  <p>No Evaluation Report Available.</p>
+{% endif %}
+
+<a href="{% url 'teacher_dashboard' %}">⬅️ Back to Dashboard</a>
+
+{% endblock %}
